@@ -1,0 +1,42 @@
+# ---- Core (Weeks 1-4) ----
+numpy
+pandas
+matplotlib
+seaborn
+scikit-learn
+requests
+python-dotenv
+jupyter
+ipykernel
+
+# ---- SQL / dashboards (Week 3) ----
+duckdb
+streamlit
+
+# ---- ML boosting (Week 4) ----
+xgboost
+lightgbm
+
+# ---- Deep learning (Week 5) ----
+torch
+torchvision
+
+# ---- Modern AI / NLP (Week 6) ----
+transformers
+datasets
+sentence-transformers
+chromadb
+faiss-cpu
+openai
+anthropic
+
+# ---- MLOps / deployment (Week 7) ----
+fastapi
+uvicorn[standard]
+pydantic
+mlflow
+pytest
+
+# ---- Code quality (all weeks) ----
+black
+ruff

@@ -1,0 +1,14 @@
+#1 What was difficult
+- Writing precise type hints for reusable helpers.
+- Understanding when to use Iterable vs list.
+- Keeping code concise while still readable.
+
+#2 What improved
+- Better understanding of type hints.
+- Cleaner function naming.
+- More confidence using comprehensions and unpacking.
+
+#3 What remains
+- Learn advanced typing (TypedDict, Protocol, generics).
+- Explore mypy.
+- Add unit testing with pytest.

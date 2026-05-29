@@ -126,6 +126,6 @@
 
 ## Self-Review
 
-- What was difficult:
-- What improved:
-- What remains:
+- **What was difficult:** Understanding the two-sum dict trick realizing you can store complements on the fly instead of using a nested loop.
+- **What improved:** Knowing when to reach for a set vs a dict, and why that swap kills O(n²) solutions.
+- **What remains:** Practicing group-by and anagram patterns more until they feel instinctive.

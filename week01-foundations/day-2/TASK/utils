@@ -1,0 +1,382 @@
+"""src/utils.py — 8 reusable, typed, documented helper utilities.
+
+Each helper is:
+- Fully type-annotated (PEP 484 / 526).
+- Documented with a Google-style docstring (summary, Args, Returns, Raises, Examples).
+- Tested inline under ``if __name__ == "__main__"``.
+
+Helpers
+-------
+1. safe_int          – Convert a value to int with a fallback default.
+2. safe_float        – Convert a value to float with a fallback default.
+3. flatten           – Flatten an arbitrarily nested list into a flat list.
+4. chunk             – Split a list into fixed-size batches.
+5. clamp             – Clamp a number between a minimum and maximum bound.
+6. deduplicate       – Remove duplicates from a list, preserving insertion order.
+7. get_nested        – Safely retrieve a value from a nested dict via a dot-path key.
+8. format_duration   – Format an integer number of seconds as a human-readable string.
+"""
+
+from __future__ import annotations
+
+from typing import Any, TypeVar
+
+T = TypeVar("T")
+
+
+# ---------------------------------------------------------------------------
+# 1. safe_int
+# ---------------------------------------------------------------------------
+
+
+def safe_int(value: Any, default: int = 0) -> int:
+    """Convert *value* to ``int``, returning *default* on failure.
+
+    Args:
+        value:   The value to convert. Strings, floats, booleans, and ``None``
+                 are all accepted; anything that cannot be cast returns *default*.
+        default: Fallback integer returned when conversion fails. Defaults to ``0``.
+
+    Returns:
+        The integer representation of *value*, or *default*.
+
+    Examples:
+        >>> safe_int("42")
+        42
+        >>> safe_int("3.9")   # float-string: truncates via float() first
+        3
+        >>> safe_int(None)
+        0
+        >>> safe_int("abc", default=-1)
+        -1
+    """
+    try:
+        # Handles float-strings like "3.9" that int() alone would reject.
+        return int(float(value))  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return default
+
+
+# ---------------------------------------------------------------------------
+# 2. safe_float
+# ---------------------------------------------------------------------------
+
+
+def safe_float(value: Any, default: float = 0.0) -> float:
+    """Convert *value* to ``float``, returning *default* on failure.
+
+    Args:
+        value:   The value to convert.
+        default: Fallback float returned when conversion fails. Defaults to ``0.0``.
+
+    Returns:
+        The float representation of *value*, or *default*.
+
+    Examples:
+        >>> safe_float("3.14")
+        3.14
+        >>> safe_float(True)   # bool is a subclass of int → 1.0
+        1.0
+        >>> safe_float("NaN")  # "NaN" is a valid float literal
+        nan
+        >>> safe_float("bad", default=-1.0)
+        -1.0
+    """
+    try:
+        return float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return default
+
+
+# ---------------------------------------------------------------------------
+# 3. flatten
+# ---------------------------------------------------------------------------
+
+
+def flatten(nested: list[Any]) -> list[Any]:
+    """Recursively flatten an arbitrarily nested list into a single flat list.
+
+    Non-list items at any depth are included as-is; empty sub-lists contribute
+    nothing to the output.
+
+    Args:
+        nested: A list that may contain other lists (to any depth) as elements.
+
+    Returns:
+        A new flat list containing every non-list leaf value.
+
+    Examples:
+        >>> flatten([1, [2, 3], [4, [5, 6]]])
+        [1, 2, 3, 4, 5, 6]
+        >>> flatten([])
+        []
+        >>> flatten([[[], []], []])
+        []
+    """
+    result: list[Any] = []
+    for item in nested:
+        if isinstance(item, list):
+            result.extend(flatten(item))
+        else:
+            result.append(item)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# 4. chunk
+# ---------------------------------------------------------------------------
+
+
+def chunk(items: list[T], size: int) -> list[list[T]]:
+    """Split *items* into consecutive sub-lists of at most *size* elements.
+
+    The final batch may be smaller than *size* if ``len(items)`` is not evenly
+    divisible by *size*.
+
+    Args:
+        items: The list to split.
+        size:  Maximum number of elements per batch. Must be >= 1.
+
+    Returns:
+        A list of sub-lists, each containing up to *size* elements.
+
+    Raises:
+        ValueError: If *size* is less than 1.
+
+    Examples:
+        >>> chunk([1, 2, 3, 4, 5], 2)
+        [[1, 2], [3, 4], [5]]
+        >>> chunk([], 3)
+        []
+        >>> chunk([1, 2, 3], 10)
+        [[1, 2, 3]]
+    """
+    if size < 1:
+        raise ValueError(f"chunk size must be >= 1, got {size!r}")
+    return [items[i : i + size] for i in range(0, len(items), size)]
+
+
+# ---------------------------------------------------------------------------
+# 5. clamp
+# ---------------------------------------------------------------------------
+
+
+def clamp(value: float, lo: float, hi: float) -> float:
+    """Clamp *value* so that it lies within [*lo*, *hi*].
+
+    Args:
+        value: The number to clamp.
+        lo:    The lower bound (inclusive).
+        hi:    The upper bound (inclusive).
+
+    Returns:
+        *value* unchanged if ``lo <= value <= hi``; *lo* if *value* < *lo*;
+        *hi* if *value* > *hi*.
+
+    Raises:
+        ValueError: If *lo* > *hi*.
+
+    Examples:
+        >>> clamp(5, 1, 10)
+        5
+        >>> clamp(-3, 0, 100)
+        0
+        >>> clamp(200, 0, 100)
+        100
+    """
+    if lo > hi:
+        raise ValueError(f"lo ({lo}) must be <= hi ({hi})")
+    return max(lo, min(value, hi))
+
+
+# ---------------------------------------------------------------------------
+# 6. deduplicate
+# ---------------------------------------------------------------------------
+
+
+def deduplicate(items: list[T]) -> list[T]:
+    """Remove duplicate values from *items*, preserving first-seen order.
+
+    Unlike ``list(set(items))``, insertion order is maintained and the input
+    does *not* need to contain hashable items (falls back to O(n²) equality
+    check for unhashable types).
+
+    Args:
+        items: The list to deduplicate.
+
+    Returns:
+        A new list with duplicates removed, in original insertion order.
+
+    Examples:
+        >>> deduplicate([3, 1, 2, 1, 3, 4])
+        [3, 1, 2, 4]
+        >>> deduplicate([])
+        []
+        >>> deduplicate(["a", "b", "a"])
+        ['a', 'b']
+    """
+    seen: list[T] = []
+    result: list[T] = []
+    for item in items:
+        if item not in seen:
+            seen.append(item)
+            result.append(item)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# 7. get_nested
+# ---------------------------------------------------------------------------
+
+
+def get_nested(data: dict[str, Any], path: str, default: Any = None) -> Any:
+    """Retrieve a value deep inside *data* using a dot-separated *path*.
+
+    Each segment of *path* is used as a successive dict key.  If any segment
+    is missing, or if an intermediate value is not a dict, *default* is
+    returned instead of raising an exception.
+
+    Args:
+        data:    The (possibly nested) dictionary to query.
+        path:    Dot-separated key path, e.g. ``"user.address.city"``.
+        default: Value returned when the path cannot be resolved. Defaults to
+                 ``None``.
+
+    Returns:
+        The value at *path* within *data*, or *default*.
+
+    Examples:
+        >>> d = {"user": {"address": {"city": "Mumbai"}}}
+        >>> get_nested(d, "user.address.city")
+        'Mumbai'
+        >>> get_nested(d, "user.phone", default="N/A")
+        'N/A'
+        >>> get_nested(d, "x.y.z")  # missing at first segment
+    """
+    current: Any = data
+    for key in path.split("."):
+        if not isinstance(current, dict):
+            return default
+        current = current.get(key, default)
+        if current is default:
+            return default
+    return current
+
+
+# ---------------------------------------------------------------------------
+# 8. format_duration
+# ---------------------------------------------------------------------------
+
+
+def format_duration(seconds: int) -> str:
+    """Format a non-negative integer of *seconds* as a human-readable string.
+
+    Components (days, hours, minutes, seconds) are included only when their
+    value is non-zero, except that ``0`` seconds always returns ``"0s"``.
+
+    Args:
+        seconds: Total duration in whole seconds. Must be >= 0.
+
+    Returns:
+        A compact, human-readable duration string such as ``"1h 3m 5s"``.
+
+    Raises:
+        ValueError: If *seconds* is negative.
+
+    Examples:
+        >>> format_duration(0)
+        '0s'
+        >>> format_duration(90)
+        '1m 30s'
+        >>> format_duration(3661)
+        '1h 1m 1s'
+        >>> format_duration(86400)
+        '1d'
+    """
+    if seconds < 0:
+        raise ValueError(f"seconds must be >= 0, got {seconds!r}")
+
+    parts: list[str] = []
+    for unit, label in ((86400, "d"), (3600, "h"), (60, "m"), (1, "s")):
+        value, seconds = divmod(seconds, unit)
+        if value:
+            parts.append(f"{value}{label}")
+
+    return " ".join(parts) if parts else "0s"
+
+
+# ---------------------------------------------------------------------------
+# Quick tests
+# ---------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    import math
+
+    # 1. safe_int
+    assert safe_int("42") == 42
+    assert safe_int("3.9") == 3
+    assert safe_int(None) == 0
+    assert safe_int("abc", default=-1) == -1
+    assert safe_int(True) == 1  # bool edge case
+
+    # 2. safe_float
+    assert safe_float("3.14") == 3.14
+    assert safe_float(True) == 1.0
+    assert math.isnan(safe_float("NaN"))
+    assert safe_float("bad", default=-1.0) == -1.0
+    assert safe_float(None) == 0.0
+
+    # 3. flatten
+    assert flatten([1, [2, 3], [4, [5, 6]]]) == [1, 2, 3, 4, 5, 6]
+    assert flatten([]) == []
+    assert flatten([[[], []], []]) == []
+    assert flatten([1]) == [1]
+
+    # 4. chunk
+    assert chunk([1, 2, 3, 4, 5], 2) == [[1, 2], [3, 4], [5]]
+    assert chunk([], 3) == []
+    assert chunk([1, 2, 3], 10) == [[1, 2, 3]]
+    try:
+        chunk([1, 2], 0)
+        assert False, "should have raised"
+    except ValueError:
+        pass
+
+    # 5. clamp
+    assert clamp(5, 1, 10) == 5
+    assert clamp(-3, 0, 100) == 0
+    assert clamp(200, 0, 100) == 100
+    assert clamp(0, 0, 0) == 0  # boundary: lo == hi
+    try:
+        clamp(5, 10, 1)
+        assert False, "should have raised"
+    except ValueError:
+        pass
+
+    # 6. deduplicate
+    assert deduplicate([3, 1, 2, 1, 3, 4]) == [3, 1, 2, 4]
+    assert deduplicate([]) == []
+    assert deduplicate(["a", "b", "a"]) == ["a", "b"]
+    assert deduplicate([1]) == [1]
+
+    # 7. get_nested
+    d = {"user": {"address": {"city": "Mumbai"}}}
+    assert get_nested(d, "user.address.city") == "Mumbai"
+    assert get_nested(d, "user.phone", default="N/A") == "N/A"
+    assert get_nested(d, "x.y.z") is None
+    assert get_nested({}, "a.b") is None
+    assert get_nested({"a": 1}, "a") == 1  # single-level
+
+    # 8. format_duration
+    assert format_duration(0) == "0s"
+    assert format_duration(90) == "1m 30s"
+    assert format_duration(3661) == "1h 1m 1s"
+    assert format_duration(86400) == "1d"
+    assert format_duration(86461) == "1d 1m 1s"
+    try:
+        format_duration(-1)
+        assert False, "should have raised"
+    except ValueError:
+        pass
+
+    print("✅ All utils quick tests passed.")

@@ -1,0 +1,25 @@
+{
+    "city": "Mumbai",
+    "country": "India",
+    "temp_c": 31,
+    "condition": "Partly Cloudy",
+    "humidity": 78,
+    "wind_kph": 12,
+    "forecast": [
+        {
+            "day": "Mon",
+            "high_c": 33,
+            "low_c": 27
+        },
+        {
+            "day": "Tue",
+            "high_c": 31,
+            "low_c": 26
+        },
+        {
+            "day": "Wed",
+            "high_c": 29,
+            "low_c": 25
+        }
+    ]
+}

@@ -1,0 +1,17 @@
+{
+    "fetched_at": "2026-06-02T11:49:40.737602+00:00",
+    "weather": {
+        "city": "Mumbai",
+        "country": "IN",
+        "temperature_c": 32.99,
+        "feels_like_c": 38.79,
+        "humidity": 58,
+        "condition": "smoke"
+    },
+    "crypto": {
+        "coin": "bitcoin",
+        "currency": "USD",
+        "price": 69424,
+        "change_24h": -4.460874899880306
+    }
+}

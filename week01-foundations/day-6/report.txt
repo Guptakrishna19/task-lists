@@ -1,0 +1,19 @@
+Finance Tracker Report
+======================
+
+Monthly Summary
+---------------
+2026-06
+  Income:   50000.00
+  Expenses: 7900.00
+  Balance:  42100.00
+
+2026-07
+  Income:   12000.00
+  Expenses: 2599.00
+  Balance:  9401.00
+
+Skipped Rows
+------------
+Line 9: invalid date 'bad-date'
+Line 10: missing amount

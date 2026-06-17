@@ -110,7 +110,6 @@ def quality_report(df, numeric_columns=None):
         "Missing Values": df.isna().sum().sum(),
         "Duplicate Rows": df.duplicated().sum()
     }
-
     if numeric_columns:
         total_outliers = 0
 

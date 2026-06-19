@@ -10,5 +10,10 @@ __pycache__/
 # Virtual environments
 .venv/
 venv/
-ENV/
-env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db

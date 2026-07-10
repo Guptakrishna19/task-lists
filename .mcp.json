@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "sync": {
+      "command": "npx",
+      "args": ["-y", "@paapii/sync-mcp-server"],
+      "env": {
+        "SYNC_PAT": "pat_JjUUWw81ru5kj7zf4wTSfROMH1XtgbOH055dHuFoIMSxjAtH",
+        "SYNC_CONVEX_SITE_URL": "https://api.sync.koanpay.com/site"
+      }
+    }
+  }
+}
